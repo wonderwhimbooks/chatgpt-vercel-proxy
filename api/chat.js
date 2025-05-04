@@ -2,6 +2,12 @@ export const config = {
   runtime: 'edge',
 };
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
+};
+
 export default async function handler(req) {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -12,9 +18,9 @@ export default async function handler(req) {
 
   try {
     const body = await req.json();
-    const { messages, model = "gpt-4", temperature = 0.8 } = body;
+    const { messages, model = "gpt-3.5-turbo", temperature = 0.8 } = body;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,17 +33,29 @@ export default async function handler(req) {
       })
     });
 
-    const data = await response.json();
+    const openaiData = await openaiRes.json();
 
-    return new Response(JSON.stringify(data), {
+    // ✅ If OpenAI returns an error, log it in the response
+    if (openaiData.error) {
+      return new Response(JSON.stringify({ error: openaiData.error.message }), {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      });
+    }
+
+    return new Response(JSON.stringify(openaiData), {
       status: 200,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json"
       }
     });
+
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: "Server error: " + err.message }), {
       status: 500,
       headers: {
         ...corsHeaders,
@@ -46,9 +64,3 @@ export default async function handler(req) {
     });
   }
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization"
-};
