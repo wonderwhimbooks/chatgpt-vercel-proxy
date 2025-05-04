@@ -35,9 +35,14 @@ export default async function handler(req) {
 
     const openaiData = await openaiRes.json();
 
-    // ✅ If OpenAI returns an error, log it in the response
-    if (openaiData.error) {
-      return new Response(JSON.stringify({ error: openaiData.error.message || JSON.stringify(openaiData) }), {
+    // If OpenAI returns an error, show it fully
+    if (!openaiRes.ok) {
+      return new Response(JSON.stringify({
+        error: true,
+        status: openaiRes.status,
+        message: openaiData.error?.message || "Unknown error from OpenAI",
+        full: openaiData
+      }), {
         status: 500,
         headers: {
           ...corsHeaders,
@@ -55,7 +60,10 @@ export default async function handler(req) {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Server error: " + err.message }), {
+    return new Response(JSON.stringify({
+      error: true,
+      message: err.message
+    }), {
       status: 500,
       headers: {
         ...corsHeaders,
