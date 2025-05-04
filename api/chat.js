@@ -37,7 +37,7 @@ export default async function handler(req) {
 
     // ✅ If OpenAI returns an error, log it in the response
     if (openaiData.error) {
-      return new Response(JSON.stringify({ error: openaiData.error.message }), {
+      return new Response(JSON.stringify({ error: openaiData.error.message || JSON.stringify(openaiData) }), {
         status: 500,
         headers: {
           ...corsHeaders,
