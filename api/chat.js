@@ -3,6 +3,13 @@ export const config = {
 };
 
 export default async function handler(req) {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const body = await req.json();
     const { messages, model = "gpt-4", temperature = 0.8 } = body;
@@ -23,12 +30,25 @@ export default async function handler(req) {
     const data = await response.json();
 
     return new Response(JSON.stringify(data), {
-      headers: { "Content-Type": "application/json" },
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      }
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      }
     });
   }
 }
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
+};
